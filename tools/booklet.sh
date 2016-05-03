@@ -1,5 +1,34 @@
-#!/bin/sh
+#!/bin/bash
 
-pdftk $1 cat 16 1 15S 2S 14 3 13S 4S 12 5 11S 6S 10 7 9S 8S output __temp__.pdf
-pdfnup __temp__.pdf --outfile $1.booklet.pdf
-rm __temp__.pdf
+if test $# -lt 1; then
+echo "Missing argument: ./booklet.sh <FILENAME>"; exit 0
+fi
+
+pages=`pdftk $1 dump_data output | grep NumberOfPages | sed -r "s/.* //g"`
+missingpages=`echo "(4 - ($pages % 4)) % 4" | bc`
+args=""
+blanks=""
+
+pages=`echo "$pages + $missingpages" | bc`
+
+for (( i = 0; i <= ($pages)/2-1; i++ ))
+do
+	s1=`expr $pages - $i`
+	s2=`expr $i + 1`
+
+	if (( i % 2 == 0)); then
+		args="$args $s1 $s2"
+	else
+		args="$args ${s1}S ${s2}S"
+	fi
+done
+
+for (( i = 0; i< $missingpages; i++ ))
+do
+    blanks="$blanks B1"
+done
+
+pdftk A=$1 B=blank.pdf cat A $blanks output - | pdftk - cat $args output ${1}.temp.pdf
+pdfnup --outfile ${1%.pdf}.booklet.pdf ${1}.temp.pdf
+
+rm ${1}.temp.pdf

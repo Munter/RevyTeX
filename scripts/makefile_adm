@@ -1,5 +1,5 @@
 # Makefile for DIKUrevy
-# 
+#
 # Author: munter@diku.dk
 #
 # This file should be symlinked to in directories with songs and sketches.
@@ -17,7 +17,7 @@ all:
 ifeq ($(strip $(pdfdeps)),)
 	@$(MAKE) -s --no-print-directory $(subst .tex,.pdf,$(wildcard $(songdir)/*.tex $(sketchdir)/*.tex $(videodir)/*.tex))
 else
-	@$(MAKE) -s --no-print-directory $(manus) $(individualdir) $(props) $(signup)
+	@$(MAKE) -s --no-print-directory $(manus) $(songs) $(individualdir) $(props) $(signup)
 endif
 
 plan: $(plan)
@@ -26,13 +26,17 @@ manus: $(manus)
 %.pdf: name = $(subst .pdf,,$(@F))
 
 # Makes a complete manuscript
-$(manus): $(acts) $(roles) $(contacts) $(pdfdeps) $(scriptdir)/manus.pl .config.mk
-ifeq ($(strip $(pdfdeps)),) 
+$(manus): $(scriptdir)/manus.pl $(acts) $(roles) $(contacts) $(pdfdeps) .config.mk
+ifeq ($(strip $(pdfdeps)),)
 	@$(MAKE) -s --no-print-directory $@
 else
 	@rm -f $@
 	@echo -n "$(name).pdf: "
+<<<<<<< HEAD
+	@$< --contacts --config .config.mk --data $(json) > $@
+=======
 	@$(scriptdir)/manus.pl .config.mk $(json)
+>>>>>>> 9fef627f51d0b2c7926398d6dbd4cf3f2c330b2e
 	@chmod 664 $@
 	@echo "OK"
 	@echo ""
@@ -84,7 +88,11 @@ $(acts): $(json) $(scriptdir)/acts.pl
 	@rm $(name).*
 	@echo ""
 
+<<<<<<< HEAD
+
+=======
 	
+>>>>>>> 9fef627f51d0b2c7926398d6dbd4cf3f2c330b2e
 $(roles): $(json) $(scriptdir)/roles.pl
 	@echo -n "$(name).tex: "
 	@$(scriptdir)/roles.pl $< > $(name).tex
@@ -133,6 +141,18 @@ $(props): $(json) $(scriptdir)/props.pl
 	@rm $(name).*
 	@echo ""
 
+$(songs): $(json) $(scriptdir)/songs.pl $(pdfdeps)
+	@rm -f $(songs)
+	@$(scriptdir)/songs.pl .config.mk $(json)
+	@echo ""
+
+public: $(datadeps) $(pdfdeps) $(json) $(acts) $(roles)
+	@mkdir -p $@
+	@cp -t $@ --parents $(datadeps) $(pdfdeps)
+	@cp -t $@ $(json) $(acts) $(roles)
+	@$(scriptdir)/manus.pl --config .config.mk --data $(json) > $(subst ${outputdir},$@,$(manus))
+
+
 # Removes all target files. Use this if you want to rebuild everything.
 clean :
 	@echo -n "Cleaning: "
@@ -147,7 +167,7 @@ clean :
 
 
 # Takes over ownership of all TeX files and makes them writable to the group.
-writable : 
+writable :
 	@echo -n "songdir: "
 	@cd $(songdir) && $(MAKE) --no-print-directory writable
 	@echo ""
